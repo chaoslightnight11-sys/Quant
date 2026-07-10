@@ -5,6 +5,7 @@ import { calculateStats, parseCsv, parseNumber } from '../src/portfolio.js';
 test('parses Turkish and international currency formats', () => {
   assert.equal(parseNumber('₺12.345,67'), 12345.67);
   assert.equal(parseNumber('12,345.67'), 12345.67);
+  assert.equal(parseNumber('36.200'), 36200);
 });
 
 test('parses quoted CSV values and Turkish headers', () => {

@@ -16,6 +16,8 @@ export function parseNumber(raw) {
   let normalized = text;
   if (comma > dot) normalized = text.replace(/\./g, '').replace(',', '.');
   else if (dot > comma && comma >= 0) normalized = text.replace(/,/g, '');
+  else if (dot >= 0 && comma < 0 && /^-?\d{1,3}(\.\d{3})+$/.test(text)) normalized = text.replace(/\./g, '');
+  else if (comma >= 0 && dot < 0 && /^-?\d{1,3}(,\d{3})+$/.test(text)) normalized = text.replace(/,/g, '');
   else if (comma >= 0) normalized = text.replace(',', '.');
   return Number(normalized.replace(/[^0-9.-]/g, ''));
 }
