@@ -1,0 +1,3 @@
+User-agent: *
+Allow: /
+Sitemap: https://chaoslightnight11-sys.github.io/Quant/sitemap.xml
