@@ -28,6 +28,15 @@ Fiyatlar gerçek satış verisi geldikten sonra dönüşüm oranına göre deği
 >
 > Quantfolio ile CSV portföyünüzü yükleyip yoğunlaşma riskinizi, sektör dağılımınızı ve portföy skorunuzu saniyeler içinde görebilirsiniz. Dosyanız cihazınızdan çıkmaz; üyelik gerekmez. Ücretsiz deneyin: [BAĞLANTI]
 
+## Takip edilebilir kampanya bağlantıları
+
+- X: `https://chaoslightnight11-sys.github.io/Quant/?utm_source=x&utm_medium=social&utm_campaign=launch`
+- LinkedIn: `https://chaoslightnight11-sys.github.io/Quant/?utm_source=linkedin&utm_medium=social&utm_campaign=launch`
+- Telegram: `https://chaoslightnight11-sys.github.io/Quant/?utm_source=telegram&utm_medium=community&utm_campaign=launch`
+- Reddit: `https://chaoslightnight11-sys.github.io/Quant/?utm_source=reddit&utm_medium=community&utm_campaign=launch`
+
+Paylaşım yapılırken her kanalda yalnızca kendi bağlantısı kullanılmalıdır. PostHog'da `$pageview` olayını `utm_source` özelliğine göre bölerek kanal performansı karşılaştırılabilir.
+
 ## Ölçülecek metrikler
 
 - Ziyaretçi → CSV yükleme oranı

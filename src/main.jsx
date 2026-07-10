@@ -1,7 +1,7 @@
 import React, { useMemo, useState } from 'react';
 import { createRoot } from 'react-dom/client';
 import posthog from 'posthog-js';
-import { ArrowRight, BarChart3, Check, Download, Lock, Menu, ShieldCheck, Sparkles, Upload, X } from 'lucide-react';
+import { ArrowRight, BarChart3, Check, Download, Lock, Menu, Share2, ShieldCheck, Sparkles, Upload, X } from 'lucide-react';
 import './styles.css';
 
 const demo = [
@@ -29,6 +29,19 @@ posthog.init(posthogKey, {
 });
 
 const track = (event, properties = {}) => posthog.capture(event, properties);
+
+const shareProduct = async () => {
+  const url = 'https://chaoslightnight11-sys.github.io/Quant/?utm_source=share&utm_medium=referral&utm_campaign=launch';
+  const data = {
+    title: 'Quantfolio — ücretsiz portföy risk analizi',
+    text: 'Portföyünün yoğunlaşma riskini ücretsiz gör. CSV dosyan cihazından çıkmaz.',
+    url,
+  };
+  track('share_click', { channel: navigator.share ? 'native' : 'clipboard' });
+  if (navigator.share) return navigator.share(data);
+  await navigator.clipboard.writeText(`${data.text} ${url}`);
+  window.alert('Paylaşım metni ve bağlantı kopyalandı.');
+};
 
 function parseCsv(text) {
   const lines = text.trim().split(/\r?\n/).filter(Boolean);
@@ -88,6 +101,7 @@ function App() {
         </div>
         {error && <div className="error">{error}</div>}
         <div className="trust"><span><Lock size={14}/> Sunucuya yükleme yok</span><span><ShieldCheck size={14}/> Kayıt gerektirmez</span><span><Check size={14}/> Ücretsiz analiz</span></div>
+        <button className="sharebtn" style={{display:'inline-flex',alignItems:'center',gap:7,marginTop:19,padding:'9px 13px',border:'1px solid #d4e3dc',borderRadius:9,background:'white',color:'#08785b',fontSize:12,fontWeight:700}} onClick={shareProduct}><Share2 size={16}/> Bir yatırımcıyla paylaş</button>
       </section>
 
       <section className="dashboard" id="dashboard">
