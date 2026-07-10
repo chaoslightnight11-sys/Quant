@@ -1,0 +1,36 @@
+name: Quantfolio Pro beta başvurusu
+description: İlk Pro rapor kullanıcıları arasına katılın
+title: "[Beta] Pro rapor başvurusu"
+labels: ["beta"]
+body:
+  - type: markdown
+    attributes:
+      value: "Finansal veya kişisel verilerinizi bu herkese açık başvuruya yazmayın."
+  - type: dropdown
+    id: asset_count
+    attributes:
+      label: Portföyünüzde yaklaşık kaç varlık var?
+      options: ["1-5", "6-15", "16-30", "30+"]
+    validations:
+      required: true
+  - type: dropdown
+    id: goal
+    attributes:
+      label: En çok hangi analizi istiyorsunuz?
+      options: ["Yoğunlaşma ve risk analizi", "Yeniden dengeleme senaryosu", "Sektör dağılımı", "Performans karşılaştırması"]
+    validations:
+      required: true
+  - type: checkboxes
+    id: price
+    attributes:
+      label: Beta teklifi
+      options:
+        - label: Pro rapor hazır olduğunda ₺149 lansman fiyatıyla satın alma bağlantısı almak istiyorum.
+          required: true
+  - type: checkboxes
+    id: privacy
+    attributes:
+      label: Gizlilik
+      options:
+        - label: Başvurunun herkese açık olduğunu ve portföy/iletişim bilgisi paylaşmamam gerektiğini anlıyorum.
+          required: true
