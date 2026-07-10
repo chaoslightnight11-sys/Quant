@@ -40,7 +40,8 @@ Paylaşım yapılırken her kanalda yalnızca kendi bağlantısı kullanılmalı
 ## Ölçülecek metrikler
 
 - Ziyaretçi → CSV yükleme oranı
-- Analiz → Pro butonuna tıklama oranı
+- Analiz → Pro butonuna tıklama (`pro_click`) oranı
+- Pro butonu → beta formuna geçiş (`beta_intent`) oranı
 - Ödeme sayfası → satın alma oranı
 - Satın alma başına destek süresi
 

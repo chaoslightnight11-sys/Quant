@@ -1,0 +1,26 @@
+name: Quantfolio geri bildirimi
+description: Hata bildirin veya geliştirme önerin
+title: "[Geri bildirim] "
+labels: ["feedback"]
+body:
+  - type: markdown
+    attributes:
+      value: "Teşekkürler. Portföyünüzü, iletişim bilginizi veya başka hassas verileri bu herkese açık forma yazmayın."
+  - type: dropdown
+    id: type
+    attributes:
+      label: Bildirim türü
+      options: ["Hata", "Özellik önerisi", "Kullanım sorusu", "Diğer"]
+    validations:
+      required: true
+  - type: textarea
+    id: detail
+    attributes:
+      label: Ne oldu veya ne geliştirebiliriz?
+      placeholder: Beklediğiniz sonucu ve gördüğünüz sonucu kişisel veri olmadan anlatın.
+    validations:
+      required: true
+  - type: input
+    id: browser
+    attributes:
+      label: Tarayıcı / cihaz (isteğe bağlı)
