@@ -1,8 +1,10 @@
 import React, { useMemo, useState } from 'react';
 import { createRoot } from 'react-dom/client';
 import posthog from 'posthog-js';
-import { ArrowRight, BarChart3, Check, Download, Lock, Menu, Share2, ShieldCheck, Sparkles, Upload, X } from 'lucide-react';
+import { ArrowRight, BarChart3, Check, Download, Lock, Menu, Printer, Share2, ShieldCheck, Sparkles, Upload, X } from 'lucide-react';
 import './styles.css';
+import './startup.css';
+import { calculateStats, parseCsv } from './portfolio.js';
 
 const demo = [
   { symbol: 'THYAO', name: 'Türk Hava Yolları', value: 48500, cost: 40200, sector: 'Ulaşım' },
@@ -43,41 +45,16 @@ const shareProduct = async () => {
   window.alert('Paylaşım metni ve bağlantı kopyalandı.');
 };
 
-function parseCsv(text) {
-  const lines = text.trim().split(/\r?\n/).filter(Boolean);
-  if (lines.length < 2) throw new Error('CSV dosyasında veri bulunamadı.');
-  const sep = lines[0].includes(';') ? ';' : ',';
-  const headers = lines[0].split(sep).map(x => x.trim().toLowerCase());
-  const find = (...names) => names.map(n => headers.indexOf(n)).find(i => i >= 0);
-  const si = find('symbol', 'sembol'), vi = find('value', 'değer', 'deger'), ci = find('cost', 'maliyet');
-  const ni = find('name', 'ad'), sec = find('sector', 'sektör', 'sektor');
-  if ([si, vi, ci].some(i => i === undefined)) throw new Error('Gerekli sütunlar: sembol, değer, maliyet.');
-  return lines.slice(1).map(line => {
-    const c = line.split(sep).map(x => x.trim());
-    const value = Number(c[vi].replace(/[^0-9.-]/g, ''));
-    const cost = Number(c[ci].replace(/[^0-9.-]/g, ''));
-    if (!c[si] || !Number.isFinite(value) || !Number.isFinite(cost)) throw new Error('Bazı satırlarda geçersiz değer var.');
-    return { symbol: c[si].toUpperCase(), name: c[ni] || c[si], value, cost, sector: c[sec] || 'Diğer' };
-  });
-}
-
 function App() {
   const [portfolio, setPortfolio] = useState(demo);
   const [uploaded, setUploaded] = useState(false);
   const [error, setError] = useState('');
   const [mobile, setMobile] = useState(false);
-  const stats = useMemo(() => {
-    const total = portfolio.reduce((s, x) => s + x.value, 0);
-    const cost = portfolio.reduce((s, x) => s + x.cost, 0);
-    const sorted = [...portfolio].sort((a,b) => b.value-a.value);
-    const concentration = total ? sorted.slice(0, 3).reduce((s,x)=>s+x.value,0) / total * 100 : 0;
-    const sectors = new Set(portfolio.map(x => x.sector)).size;
-    const score = Math.max(20, Math.round(92 - concentration * .55 - (sectors < 4 ? 10 : 0)));
-    return { total, gain: total-cost, gainPct: cost ? (total-cost)/cost*100 : 0, concentration, sectors, score, sorted };
-  }, [portfolio]);
+  const stats = useMemo(() => calculateStats(portfolio), [portfolio]);
 
   const upload = e => {
     const file = e.target.files?.[0]; if (!file) return;
+    if (file.size > 2_000_000) { setError('CSV dosyası en fazla 2 MB olabilir.'); track('analysis_error', { error_type: 'file_too_large' }); return; }
     track('csv_upload', { file_type: file.type || 'text/csv', file_size_bytes: file.size });
     const reader = new FileReader();
     reader.onload = () => { try { const parsed = parseCsv(reader.result); setPortfolio(parsed); setUploaded(true); setError(''); track('analysis_complete', { asset_count: parsed.length }); document.querySelector('#dashboard')?.scrollIntoView({behavior:'smooth'}); } catch(err) { setError(err.message); track('analysis_error', { error_type: 'invalid_csv' }); } };
@@ -105,7 +82,7 @@ function App() {
       </section>
 
       <section className="dashboard" id="dashboard">
-        <div className="dashhead"><div><span className="kicker">{uploaded?'PORTFÖYÜN':'İNTERAKTİF DEMO'}</span><h2>Risk panoraması</h2></div><span className="updated">● Anlık hesaplandı</span></div>
+        <div className="dashhead"><div><span className="kicker">{uploaded?'PORTFÖYÜN':'İNTERAKTİF DEMO'}</span><h2>Risk panoraması</h2></div><div className="dashactions"><span className="updated">● Anlık hesaplandı</span>{uploaded&&<button onClick={()=>{track('report_export',{format:'print'});window.print();}}><Printer size={15}/> PDF kaydet</button>}</div></div>
         <div className="metrics">
           <article><small>Toplam değer</small><strong>{money.format(stats.total)}</strong><span className="positive">{pct(stats.gainPct)} toplam getiri</span></article>
           <article><small>Net kazanç</small><strong>{money.format(stats.gain)}</strong><span>Maliyete göre</span></article>
@@ -120,8 +97,9 @@ function App() {
 
       <section className="features" id="features"><div className="sectioncopy"><span className="kicker">NEDEN QUANTFOLIO?</span><h2>Rakamları karara dönüştür.</h2><p>Karmaşık tablolar yerine, neyin önemli olduğunu anlatan sade ve uygulanabilir analizler.</p></div><div className="featuregrid"><article><ShieldCheck/><h3>Önce gizlilik</h3><p>Dosyan tarayıcında işlenir. Finansal verilerin hiçbir sunucuya gönderilmez.</p></article><article><BarChart3/><h3>Anlaşılır risk</h3><p>Yoğunlaşma ve çeşitlendirme metriklerini tek bakışta yorumla.</p></article><article><Sparkles/><h3>Akıllı öneriler</h3><p>Portföy yapına göre sade, tarafsız ve uygulanabilir iyileştirmeler al.</p></article></div></section>
       <section className="pricing" id="pricing"><span className="kicker">BASİT FİYATLANDIRMA</span><h2>Önce gör, sonra derinleş.</h2><div className="pricecards"><article><h3>Ücretsiz</h3><strong>₺0</strong><p>Temel portföy özeti ve risk skoru</p><ul><li><Check/>CSV analizi</li><li><Check/>Dağılım görünümü</li><li><Check/>Temel risk içgörüsü</li></ul><a href="#analyze">Şimdi analiz et</a></article><article className="pro"><span className="popular">İLK 10 KİŞİ</span><h3>Pro Rapor</h3><strong>₺149 <small>/ rapor</small></strong><p>Derin analiz ve kişiselleştirilmiş aksiyon planı</p><ul><li><Check/>Tüm ücretsiz özellikler</li><li><Check/>PDF risk raporu</li><li><Check/>Yeniden dengeleme senaryosu</li><li><Check/>Geçmiş analiz karşılaştırması</li></ul><a className="procta" href={betaUrl} target="_blank" rel="noreferrer" onClick={()=>{ track('pro_click', { price_try: 149, placement: 'pricing' }); track('beta_submit', { placement: 'pricing' }); }}>Beta listesine katıl <ArrowRight/></a></article></div></section>
+      <section className="faq" id="faq"><span className="kicker">SIK SORULANLAR</span><h2>Veriniz sizde kalır.</h2><div><details><summary>CSV dosyam sunucuya yükleniyor mu?</summary><p>Hayır. Dosya yalnızca tarayıcınızda işlenir; portföy satırları ve tutarlar analiz sistemine gönderilmez.</p></details><details><summary>Bu yatırım tavsiyesi mi?</summary><p>Hayır. Quantfolio yalnızca yüklediğiniz veriyi özetleyen bilgilendirme aracıdır.</p></details><details><summary>Pro rapor hemen satın alınabilir mi?</summary><p>Henüz değil. Beta listesi talebi ölçmek içindir; ödeme alınmadan önce koşullar ve ödeme altyapısı ayrıca yayımlanacaktır.</p></details></div></section>
     </main>
-    <footer id="privacy"><a className="brand" href="#"><span>Q</span> Quantfolio</a><p>Yatırım tavsiyesi değildir. Analizler yalnızca bilgilendirme amaçlıdır.</p><small>© 2026 Quantfolio</small></footer>
+    <footer id="privacy"><a className="brand" href="#"><span>Q</span> Quantfolio</a><p>Yatırım tavsiyesi değildir. Portföy verileri cihazınızda işlenir.</p><span><a href="privacy.html">Gizlilik</a> · <a href="terms.html">Koşullar</a> · <a href={betaUrl} target="_blank" rel="noreferrer">Geri bildirim</a></span><small>© 2026 Quantfolio</small></footer>
   </>;
 }
 createRoot(document.getElementById('root')).render(<App/>);
