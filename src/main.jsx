@@ -1,5 +1,6 @@
 import React, { useMemo, useState } from 'react';
 import { createRoot } from 'react-dom/client';
+import posthog from 'posthog-js';
 import { ArrowRight, BarChart3, Check, Download, Lock, Menu, ShieldCheck, Sparkles, Upload, X } from 'lucide-react';
 import './styles.css';
 
@@ -14,6 +15,20 @@ const demo = [
 const money = new Intl.NumberFormat('tr-TR', { style: 'currency', currency: 'TRY', maximumFractionDigits: 0 });
 const pct = n => `${n >= 0 ? '+' : ''}${n.toFixed(1)}%`;
 const betaUrl = 'https://github.com/chaoslightnight11-sys/Quant/issues/new?template=beta.yml';
+const posthogKey = 'phc_kuHBiTDQBsanpA7LrQpWjxMn9zxnx9fEeKKFtskFXDRG';
+
+posthog.init(posthogKey, {
+  api_host: 'https://us.i.posthog.com',
+  ui_host: 'https://us.posthog.com',
+  defaults: '2025-11-30',
+  capture_pageview: true,
+  capture_pageleave: true,
+  autocapture: false,
+  disable_session_recording: true,
+  persistence: 'localStorage+cookie',
+});
+
+const track = (event, properties = {}) => posthog.capture(event, properties);
 
 function parseCsv(text) {
   const lines = text.trim().split(/\r?\n/).filter(Boolean);
@@ -50,8 +65,9 @@ function App() {
 
   const upload = e => {
     const file = e.target.files?.[0]; if (!file) return;
+    track('csv_upload', { file_type: file.type || 'text/csv', file_size_bytes: file.size });
     const reader = new FileReader();
-    reader.onload = () => { try { setPortfolio(parseCsv(reader.result)); setUploaded(true); setError(''); document.querySelector('#dashboard')?.scrollIntoView({behavior:'smooth'}); } catch(err) { setError(err.message); } };
+    reader.onload = () => { try { const parsed = parseCsv(reader.result); setPortfolio(parsed); setUploaded(true); setError(''); track('analysis_complete', { asset_count: parsed.length }); document.querySelector('#dashboard')?.scrollIntoView({behavior:'smooth'}); } catch(err) { setError(err.message); track('analysis_error', { error_type: 'invalid_csv' }); } };
     reader.readAsText(file);
   };
   const downloadSample = () => {
@@ -84,12 +100,12 @@ function App() {
         </div>
         <div className="panels">
           <article className="allocation"><div className="paneltitle"><h3>Varlık dağılımı</h3><span>Değere göre</span></div>{stats.sorted.map((x,i)=><div className="asset" key={x.symbol}><b>{x.symbol}<small>{x.name}</small></b><div className="bar"><i style={{width:`${x.value/stats.total*100}%`,background:`hsl(${160+i*25} 65% ${45+i*3}%)`}}/></div><strong>{(x.value/stats.total*100).toFixed(1)}%</strong></div>)}</article>
-          <article className="risk"><div className="paneltitle"><h3>Risk radarı</h3><BarChart3 size={20}/></div><div className="riskrow"><span>İlk 3 varlık yoğunluğu</span><b>{stats.concentration.toFixed(0)}%</b></div><div className="meter"><i style={{width:`${stats.concentration}%`}}/></div><div className="insight"><Sparkles size={18}/><p><b>Quant içgörüsü</b>{stats.concentration>70?'Portföyünün büyük bölümü üç varlıkta. Yeni yatırımları farklı sektörlere yönlendirmek dalgalanmayı azaltabilir.':'Dağılımın dengeli görünüyor. Sektör ağırlıklarını düzenli kontrol etmeye devam et.'}</p></div><a className="report" href={betaUrl} target="_blank" rel="noreferrer">Pro beta listesine katıl <ArrowRight size={17}/></a></article>
+          <article className="risk"><div className="paneltitle"><h3>Risk radarı</h3><BarChart3 size={20}/></div><div className="riskrow"><span>İlk 3 varlık yoğunluğu</span><b>{stats.concentration.toFixed(0)}%</b></div><div className="meter"><i style={{width:`${stats.concentration}%`}}/></div><div className="insight"><Sparkles size={18}/><p><b>Quant içgörüsü</b>{stats.concentration>70?'Portföyünün büyük bölümü üç varlıkta. Yeni yatırımları farklı sektörlere yönlendirmek dalgalanmayı azaltabilir.':'Dağılımın dengeli görünüyor. Sektör ağırlıklarını düzenli kontrol etmeye devam et.'}</p></div><a className="report" href={betaUrl} target="_blank" rel="noreferrer" onClick={()=>track('beta_submit', { placement: 'dashboard' })}>Pro beta listesine katıl <ArrowRight size={17}/></a></article>
         </div>
       </section>
 
       <section className="features" id="features"><div className="sectioncopy"><span className="kicker">NEDEN QUANTFOLIO?</span><h2>Rakamları karara dönüştür.</h2><p>Karmaşık tablolar yerine, neyin önemli olduğunu anlatan sade ve uygulanabilir analizler.</p></div><div className="featuregrid"><article><ShieldCheck/><h3>Önce gizlilik</h3><p>Dosyan tarayıcında işlenir. Finansal verilerin hiçbir sunucuya gönderilmez.</p></article><article><BarChart3/><h3>Anlaşılır risk</h3><p>Yoğunlaşma ve çeşitlendirme metriklerini tek bakışta yorumla.</p></article><article><Sparkles/><h3>Akıllı öneriler</h3><p>Portföy yapına göre sade, tarafsız ve uygulanabilir iyileştirmeler al.</p></article></div></section>
-      <section className="pricing" id="pricing"><span className="kicker">BASİT FİYATLANDIRMA</span><h2>Önce gör, sonra derinleş.</h2><div className="pricecards"><article><h3>Ücretsiz</h3><strong>₺0</strong><p>Temel portföy özeti ve risk skoru</p><ul><li><Check/>CSV analizi</li><li><Check/>Dağılım görünümü</li><li><Check/>Temel risk içgörüsü</li></ul><a href="#analyze">Şimdi analiz et</a></article><article className="pro"><span className="popular">İLK 10 KİŞİ</span><h3>Pro Rapor</h3><strong>₺149 <small>/ rapor</small></strong><p>Derin analiz ve kişiselleştirilmiş aksiyon planı</p><ul><li><Check/>Tüm ücretsiz özellikler</li><li><Check/>PDF risk raporu</li><li><Check/>Yeniden dengeleme senaryosu</li><li><Check/>Geçmiş analiz karşılaştırması</li></ul><a className="procta" href={betaUrl} target="_blank" rel="noreferrer">Beta listesine katıl <ArrowRight/></a></article></div></section>
+      <section className="pricing" id="pricing"><span className="kicker">BASİT FİYATLANDIRMA</span><h2>Önce gör, sonra derinleş.</h2><div className="pricecards"><article><h3>Ücretsiz</h3><strong>₺0</strong><p>Temel portföy özeti ve risk skoru</p><ul><li><Check/>CSV analizi</li><li><Check/>Dağılım görünümü</li><li><Check/>Temel risk içgörüsü</li></ul><a href="#analyze">Şimdi analiz et</a></article><article className="pro"><span className="popular">İLK 10 KİŞİ</span><h3>Pro Rapor</h3><strong>₺149 <small>/ rapor</small></strong><p>Derin analiz ve kişiselleştirilmiş aksiyon planı</p><ul><li><Check/>Tüm ücretsiz özellikler</li><li><Check/>PDF risk raporu</li><li><Check/>Yeniden dengeleme senaryosu</li><li><Check/>Geçmiş analiz karşılaştırması</li></ul><a className="procta" href={betaUrl} target="_blank" rel="noreferrer" onClick={()=>{ track('pro_click', { price_try: 149, placement: 'pricing' }); track('beta_submit', { placement: 'pricing' }); }}>Beta listesine katıl <ArrowRight/></a></article></div></section>
     </main>
     <footer id="privacy"><a className="brand" href="#"><span>Q</span> Quantfolio</a><p>Yatırım tavsiyesi değildir. Analizler yalnızca bilgilendirme amaçlıdır.</p><small>© 2026 Quantfolio</small></footer>
   </>;
